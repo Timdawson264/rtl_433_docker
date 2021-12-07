@@ -16,7 +16,7 @@ RUN mkdir -p /src/libusb && \
     tar --strip-components=1  -xf /libusb.tar.gz -C /src/libusb && \
     cd /src/libusb && \
     ./bootstrap.sh && \
-    ./configure --enable-static --disable-shared --disable-udev --prefix /opt && \
+    ./configure --disable-static --enable-shared --disable-udev --prefix /opt && \
     make -j$(nproc) && make install
 
 env PKG_CONFIG_PATH=/opt/lib/pkgconfig/
@@ -26,19 +26,20 @@ RUN mkdir -p /src/librtlsdr && \
     tar --strip-components=1  -xf /librtlsdr.tar.gz -C /src/librtlsdr && \
     cd /src/librtlsdr/ && \
     autoreconf -ivf && \
-    env LDFLAGS="--static" ./configure --prefix=/opt --enable-static --disable-shared && \
-    make -j$(nproc) && make install
+    ./configure --prefix=/opt --disable-static --enable-shared && \
+    make -j$(nproc) && make install-strip
 
 RUN mkdir -p /src/rtl433 && \
     tar --strip-components=1 -xf /rtl433.tar.gz -C /src/rtl433 && \
     mkdir -p /src/rtl433/build && cd /src/rtl433/build && \
-    cmake -D CMAKE_INSTALL_PREFIX=/opt -DCMAKE_EXE_LINKER_FLAGS="-static" .. && \
-    make -j$(nproc) && make install
+    cmake -D CMAKE_INSTALL_PREFIX=/opt .. && \
+    make -j$(nproc) && strip /src/rtl433/build/src/rtl_433 && make install
 
 
 FROM docker.io/library/alpine
 COPY --from=build /opt/bin/ /bin/
+COPY --from=build /opt/lib/ /lib/
 COPY --from=build /opt/etc/rtl_433 /etc/rtl_433
 
-RUN apk add --no-cache tini
+RUN apk add --no-cache tini 
 ENTRYPOINT ["/sbin/tini", "--"]
