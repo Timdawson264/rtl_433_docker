@@ -42,4 +42,4 @@ COPY --from=build /opt/lib/ /lib/
 COPY --from=build /opt/etc/rtl_433 /etc/rtl_433
 
 RUN apk add --no-cache tini 
-ENTRYPOINT ["/sbin/tini", "--"]
+ENTRYPOINT ["/sbin/tini", "-g", "--"]
